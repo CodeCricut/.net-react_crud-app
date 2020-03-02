@@ -10,7 +10,11 @@ import {
     Button,
     FormHelperText
 } from "@material-ui/core";
+
+import { connect } from "react-redux";
+import { useToasts } from "react-toast-notifications";
 import useForm from "./hooks/useForm";
+import { create, update, deleteRecord } from "./../actions/candidate";
 
 const initialFieldValues = {
     fullName: "",
@@ -37,11 +41,20 @@ const styles = theme => ({
     }
 });
 
-const CandidateForm = ({ classes, ...props }) => {
+const CandidateForm = ({
+    candidateList,
+    classes,
+    create,
+    update,
+    deleteRecord,
+    currentId,
+    setCurrentId
+}) => {
+    // toast msg
+    const { addToast } = useToasts();
+
     const validate = (fieldValues = values) => {
-        let temp = {
-            ...errors
-        };
+        let temp = errors;
 
         if ("fullName" in fieldValues)
             temp.fullName = fieldValues.fullName
@@ -69,10 +82,14 @@ const CandidateForm = ({ classes, ...props }) => {
             return Object.values(temp).every(x => x == "");
     };
 
-    const { values, _, errors, setErrors, handleInputChange } = useForm(
-        initialFieldValues,
-        validate
-    );
+    const {
+        values,
+        setValues,
+        errors,
+        setErrors,
+        handleInputChange,
+        resetForm
+    } = useForm(initialFieldValues, validate, setCurrentId);
 
     // material-ui select
     const inputLabel = React.useRef(null);
@@ -81,11 +98,30 @@ const CandidateForm = ({ classes, ...props }) => {
         setLabelWidth(inputLabel.current.offsetWidth);
     }, []);
 
-    const handleSubmit = e => {
-        e.preventDefault();
-        console.log(errors);
+    useEffect(() => {
+        if (currentId !== 0)
+            setValues({
+                ...candidateList.find(c => c.id === currentId)
+            });
+    }, [currentId, candidateList]);
 
-        if (validate()) window.alert("validation succeeded");
+    const handleSubmit = async e => {
+        e.preventDefault();
+        if (validate()) {
+            if (currentId === 0) {
+                await create(values, () => {
+                    addToast("Created candidate successfully!", {
+                        appearance: "success"
+                    });
+                });
+            } else
+                await update(currentId, values, () => {
+                    addToast("Updated candidate successfully!", {
+                        appearance: "success"
+                    });
+                });
+            resetForm();
+        }
     };
 
     return (
@@ -106,7 +142,7 @@ const CandidateForm = ({ classes, ...props }) => {
                     <TextField
                         name="email"
                         variant="outlined"
-                        label="Full Name"
+                        label="Email"
                         value={values.email}
                         onChange={handleInputChange}
                         {...(errors.email && {
@@ -180,6 +216,7 @@ const CandidateForm = ({ classes, ...props }) => {
                         <Button
                             variant="contained"
                             className={classes.smMargin}
+                            onClick={resetForm}
                         >
                             Reset
                         </Button>
@@ -190,4 +227,18 @@ const CandidateForm = ({ classes, ...props }) => {
     );
 };
 
-export default withStyles(styles)(CandidateForm);
+const mapStateToProps = state => ({
+    candidateList: state.Candidate.list
+});
+
+const mapActionsToProps = {
+    create,
+    update,
+    deleteRecord
+};
+
+// With styles simply passes our custom style into the component; it is named classes
+export default connect(
+    mapStateToProps,
+    mapActionsToProps
+)(withStyles(styles)(CandidateForm));

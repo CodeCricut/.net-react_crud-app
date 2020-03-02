@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
-import { fetchAll } from "../actions/candidate";
+import { fetchAll, deleteRecord } from "../actions/candidate";
+import { useToasts } from "react-toast-notifications";
+
 import {
     Grid,
     Paper,
@@ -10,8 +12,16 @@ import {
     TableCell,
     TableRow,
     TableBody,
-    withStyles
+    withStyles,
+    ButtonGroup,
+    Button,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    DialogTitle,
+    Dialog
 } from "@material-ui/core";
+import { Edit, Delete } from "@material-ui/icons";
 import CandidateForm from "./CandidateForm";
 
 // Define overridding styles for material-ui
@@ -29,16 +39,60 @@ const styles = theme => ({
     }
 });
 
-const Candidates = ({ candidateList, fetchAllCandidates, classes }) => {
+const Candidates = ({
+    candidateList,
+    fetchAllCandidates,
+    classes,
+    deleteRecord
+}) => {
+    const [open, setOpen] = useState(false);
+
     useEffect(() => {
+        console.log("fetch all candidates called");
         fetchAllCandidates();
-    }, []); // empty array means it will run once when component mounts
+    }, [open]); // empty array means it will run once when component mounts
+    const [currentId, setCurrentId] = useState(0);
+
+    const { addToast } = useToasts();
+
+    const confirmDeleteRecord = () => {
+        setOpen(true);
+    };
+
     return (
         <>
+            {/* React alert/confirm dialog */}
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                <DialogTitle>Delete Record?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Once you delete a record, it cannot be recovered.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpen(false)} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={async () => {
+                            await deleteRecord(currentId, () =>
+                                addToast("Delete operation successful.", {
+                                    appearance: "info"
+                                })
+                            );
+                            setOpen(false);
+                        }}
+                        color="primary"
+                    >
+                        Confirm
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Paper className={classes.paper} elevation={3}>
                 <Grid container>
                     <Grid item xs={6}>
-                        <CandidateForm />
+                        <CandidateForm {...{ currentId, setCurrentId }} />
                     </Grid>
                     <Grid item xs={6}>
                         <TableContainer>
@@ -48,6 +102,7 @@ const Candidates = ({ candidateList, fetchAllCandidates, classes }) => {
                                         <TableCell>Name</TableCell>
                                         <TableCell>Mobile</TableCell>
                                         <TableCell>Blood Group</TableCell>
+                                        <TableCell></TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -62,6 +117,31 @@ const Candidates = ({ candidateList, fetchAllCandidates, classes }) => {
                                                 </TableCell>
                                                 <TableCell>
                                                     {record.bloodGroup}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <ButtonGroup>
+                                                        <Button
+                                                            color="primary"
+                                                            onClick={() => {
+                                                                setCurrentId(
+                                                                    record.id
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Edit />
+                                                        </Button>
+                                                        <Button
+                                                            color="secondary"
+                                                            onClick={() => {
+                                                                setCurrentId(
+                                                                    record.id
+                                                                );
+                                                                confirmDeleteRecord();
+                                                            }}
+                                                        >
+                                                            <Delete />
+                                                        </Button>
+                                                    </ButtonGroup>
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -81,7 +161,8 @@ const mapStateToProps = state => ({
 });
 
 const mapActionsToProps = {
-    fetchAllCandidates: fetchAll
+    fetchAllCandidates: fetchAll,
+    deleteRecord
 };
 
 // With styles simply passes our custom style into the component; it is named classes

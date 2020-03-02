@@ -70,3 +70,52 @@ export const fetchAll = () => async (dispatch, getState) => {
         console.error(err);
     }
 };
+
+const formatData = data => ({
+    ...data,
+    age: parseInt(data.age ? data.age : 0)
+});
+
+export const create = (data, onSuccess) => async dispatch => {
+    try {
+        data = formatData(data);
+        const { data: newData } = await api.candidate().create(data);
+        dispatch({
+            type: ACTION_TYPES.CREATE,
+            payload: newData
+        });
+        onSuccess();
+        return newData.id;
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+export const update = (id, data, onSuccess) => async dispatch => {
+    try {
+        data = formatData(data);
+        const { data: newData } = await api.candidate().update(id, data);
+
+        dispatch({
+            type: ACTION_TYPES.UPDATE,
+            payload: { id, ...newData }
+        });
+        onSuccess();
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+export const deleteRecord = (id, onSuccess) => async dispatch => {
+    try {
+        await api.candidate().delete(id);
+
+        dispatch({
+            type: ACTION_TYPES.DELETE,
+            payload: id
+        });
+        onSuccess();
+    } catch (err) {
+        console.error(err);
+    }
+};

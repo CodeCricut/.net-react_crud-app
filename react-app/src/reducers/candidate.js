@@ -21,6 +21,27 @@ export const Candidate = (state = initialState, action) => {
                 ...state,
                 list: [...action.payload]
             };
+        case ACTION_TYPES.CREATE:
+            return {
+                ...state,
+                list: [...state.list, action.payload]
+            };
+        case ACTION_TYPES.UPDATE:
+            return {
+                ...state,
+                list: state.list.map(candidate =>
+                    candidate.id === action.payload.id
+                        ? action.payload
+                        : candidate
+                )
+            };
+        case ACTION_TYPES.DELETE:
+            return {
+                ...state,
+                list: state.list.filter(
+                    candidate => candidate.id !== action.payload.id
+                )
+            };
         default:
             return state;
     }

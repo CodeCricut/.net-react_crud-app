@@ -9,17 +9,33 @@ import {
     TableHead,
     TableCell,
     TableRow,
-    TableBody
+    TableBody,
+    withStyles
 } from "@material-ui/core";
 import CandidateForm from "./CandidateForm";
 
-const Candidates = ({ candidateList, fetchAllCandidates }) => {
+// Define overridding styles for material-ui
+const styles = theme => ({
+    // override existing styles
+    root: {
+        "& .MuiTableCell-head": {
+            fontSize: "1.25rem"
+        }
+    },
+    // custom class
+    paper: {
+        margin: theme.spacing(2), // 16px
+        padding: theme.spacing(2)
+    }
+});
+
+const Candidates = ({ candidateList, fetchAllCandidates, classes }) => {
     useEffect(() => {
         fetchAllCandidates();
     }, []); // empty array means it will run once when component mounts
     return (
         <>
-            <Paper>
+            <Paper className={classes.paper} elevation={3}>
                 <Grid container>
                     <Grid item xs={6}>
                         <CandidateForm />
@@ -27,7 +43,7 @@ const Candidates = ({ candidateList, fetchAllCandidates }) => {
                     <Grid item xs={6}>
                         <TableContainer>
                             <Table>
-                                <TableHead>
+                                <TableHead className={classes.root}>
                                     <TableRow>
                                         <TableCell>Name</TableCell>
                                         <TableCell>Mobile</TableCell>
@@ -36,9 +52,8 @@ const Candidates = ({ candidateList, fetchAllCandidates }) => {
                                 </TableHead>
                                 <TableBody>
                                     {candidateList.map((record, index) => {
-                                        console.log("yo");
                                         return (
-                                            <TableRow key={index}>
+                                            <TableRow key={index} hover={true}>
                                                 <TableCell>
                                                     {record.fullName}
                                                 </TableCell>
@@ -69,4 +84,8 @@ const mapActionsToProps = {
     fetchAllCandidates: fetchAll
 };
 
-export default connect(mapStateToProps, mapActionsToProps)(Candidates);
+// With styles simply passes our custom style into the component; it is named classes
+export default connect(
+    mapStateToProps,
+    mapActionsToProps
+)(withStyles(styles)(Candidates));
